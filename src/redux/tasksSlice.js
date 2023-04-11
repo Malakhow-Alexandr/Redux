@@ -1,50 +1,69 @@
-import { createSlice, nanoid } from '@reduxjs/toolkit';
+import { createSlice } from '@reduxjs/toolkit';
+import {
+  fetchTasks,
+  addTasks,
+  deleteTask,
+  toggleCompleted,
+} from './operations';
 
-const taskInitialState = [
-  { id: 0, text: 'Learn HTML and CSS', completed: true },
-  { id: 1, text: 'Get good at JavaScript', completed: true },
-  { id: 2, text: 'Master React', completed: false },
-  { id: 3, text: 'Discover Redux', completed: false },
-  { id: 4, text: 'Build amazing apps', completed: false },
-];
+const handlePending = state => {
+  state.isLoading = true;
+};
+const handleRejected = (state, action) => {
+  state.isLoading = false;
+  state.error = action.payload;
+};
+
+const tasksInitialState = {
+  items: [],
+  isLoading: false,
+  error: null,
+};
 
 const tasksSlice = createSlice({
   name: 'tasks',
-  initialState: taskInitialState,
-  reducers: {
-    addTask: {
-      reducer(state, action) {
-        state.push(action.payload);
-      },
-      prepare(text) {
-        return {
-          payload: {
-            text,
-            id: nanoid(),
-            completed: false,
-          },
-        };
-      },
+  initialState: tasksInitialState,
+  extraReducers: {
+    [fetchTasks.pending]: handlePending,
+    [addTasks.pending]: handlePending,
+    [deleteTask.pending]: handlePending,
+    [toggleCompleted.pending]: handlePending,
+    [addTasks.rejected]: handleRejected,
+    [addTasks.rejected]: handleRejected,
+    [fetchTasks.rejected]: handleRejected,
+    [deleteTask.rejected]: handleRejected,
+    [toggleCompleted.rejected]: handleRejected,
+
+    [addTasks.fulfilled](state, action) {
+      state.isLoading = false;
+      state.error = null;
+      state.items.push(action.payload);
     },
-    deleteTask(state, action) {
-      const index = state.findIndex(task => task.id === action.payload);
-      state.splice(index, 1);
+
+    [fetchTasks.fulfilled](state, action) {
+      state.isLoading = false;
+      state.error = null;
+      state.items = action.payload;
     },
-    toggleCompleted(state, action) {
-      for (const task of state) {
-        if (task.id === action.payload) {
-          task.completed = !task.completed;
-          break;
-        }
-      }
+
+    [deleteTask.fulfilled](state, action) {
+      state.isLoading = false;
+      state.error = null;
+      const index = state.items.findIndex(
+        task => task.id === action.payload.id
+      );
+      state.items.splice(index, 1);
     },
-    deleteCompleted(state, action) {
-      return state.filter(task => !task.completed);
+
+    [toggleCompleted.fulfilled](state, action) {
+      state.isLoading = false;
+      state.error = null;
+      const index = state.items.findIndex(
+        task => task.id === action.payload.id
+      );
+      state.items.splice(index, 1, action.payload);
     },
   },
 });
-
-export const { addTask, deleteTask, toggleCompleted, deleteCompleted } =
-  tasksSlice.actions;
 
 export const tasksReducer = tasksSlice.reducer;
